@@ -1,71 +1,48 @@
-use std::{fs::create_dir_all, path::Path, str::FromStr};
-
-use clap::{Args, ValueEnum};
+use clap::Args;
 use palette::Srgb;
 
-use super::Cli;
 use crate::{
-    optimize::base_palette::optimize_base_palette,
-    palette::{base_palette::BasePalette, full_palette::FullPalette},
-    setting::Setting,
+    cli::Cli,
+    determinator,
+    io::{ExportExt, Setting},
+    model::{BasePalette, Color, ColorMap, FullPalette, SrgbColorMapExt, ThemeDetectionStrategy},
+    optimize::OptimizerExt,
+    paths::Paths,
 };
 
 #[derive(Debug, Clone, Args)]
-
 pub struct GenerateArgs {
-    pub rgb: String,
+    pub rgb: Srgb<u8>,
+
     #[arg(short, long)]
-    pub no_saturation_fg: bool,
+    pub no_saturation_ui: bool,
+
+    // TODO: ここのリネーム
     #[arg(short, long, default_value = "auto")]
-    pub color_theme: ColorTheme,
-}
-
-pub struct ParseGenerateArgs {
-    pub rgb: Srgb,
-    pub no_saturation_fg: bool,
-    pub color_theme: ColorTheme,
-}
-
-#[derive(Debug, Clone, ValueEnum, PartialEq)]
-pub enum ColorTheme {
-    Auto,
-    Dark,
-    Light,
-}
-
-impl TryFrom<GenerateArgs> for ParseGenerateArgs {
-    type Error = anyhow::Error;
-
-    fn try_from(v: GenerateArgs) -> Result<Self, Self::Error> {
-        let rgb = Srgb::from_str(&v.rgb)?.into();
-        Ok(Self {
-            rgb,
-            no_saturation_fg: v.no_saturation_fg,
-            color_theme: v.color_theme,
-        })
-    }
+    pub color_theme: ThemeDetectionStrategy,
 }
 
 impl Cli {
     pub fn generate(args: &GenerateArgs) -> anyhow::Result<()> {
-        let args = ParseGenerateArgs::try_from(args.clone())?;
         let mut rng = rand::thread_rng();
 
-        let path_prefix = Path::new(".vscode");
-        create_dir_all(path_prefix)?;
-        let palette_path = path_prefix.join("palette.json");
-        let full_palette_path = path_prefix.join("full_palette.json");
-        let setting_path = path_prefix.join("settings.json");
+        let determinated = determinator::determinate(args.rgb, args.color_theme);
 
-        let mut palette = BasePalette::new(&args.rgb, &args.color_theme, &mut rng);
-        optimize_base_palette(&mut palette, (2..9).collect(), 100, &mut rng)?;
-        palette.export(&palette_path)?;
+        // Don't optimize non-colored colors by default, likes Color::Gray
+        let pre_optimizing_targets: Vec<_> = Color::colorized_iter().collect();
 
-        let full_palette = FullPalette::from(palette);
-        full_palette.export(&full_palette_path)?;
+        let color_map = ColorMap::initialize_with(determinated.colors, &mut rng)
+            .optimize(&pre_optimizing_targets, &mut rng);
 
-        let setting = Setting::new(&full_palette, args.no_saturation_fg);
-        setting.export(&setting_path)?;
+        let palette = BasePalette::new(determinated.theme, color_map);
+        let full_palette = FullPalette::from(&palette);
+        let setting = Setting::new(&full_palette, args.no_saturation_ui);
+
+        std::fs::create_dir(Paths::vscode_dir())?;
+        palette.export(&Paths::palette())?;
+        full_palette.export(&Paths::full_palette())?;
+        setting.export(&Paths::setting())?;
+
         Ok(())
     }
 }
