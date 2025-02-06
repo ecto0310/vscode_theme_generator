@@ -38,7 +38,9 @@ impl Cli {
         let full_palette = FullPalette::from(&palette);
         let setting = Setting::new(&full_palette, args.no_saturation_ui);
 
-        std::fs::create_dir(Paths::vscode_dir())?;
+        if !std::path::Path::new(&Paths::vscode_dir()).exists() {
+            std::fs::create_dir(Paths::vscode_dir())?;
+        }
         palette.export(&Paths::palette())?;
         full_palette.export(&Paths::full_palette())?;
         setting.export(&Paths::setting())?;
