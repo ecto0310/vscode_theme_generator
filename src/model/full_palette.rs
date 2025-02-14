@@ -66,7 +66,7 @@ impl From<&BasePalette> for FullPalette {
 
         Self {
             theme: p.theme(),
-            monochrome: make_variant(monochrome_rgb, p.theme(), true),
+            monochrome: make_variant(monochrome_rgb, p.theme(), false),
             color_map,
         }
     }
