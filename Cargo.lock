@@ -214,9 +214,9 @@ checksum = "5aaeb2981e0606ca11d79718f8bb01164f1d6ed75080182d3abf017e6d244b6d"
 
 [[package]]
 name = "linearize"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53d5b35550da9461fb8d3acf71c9925afae570bfc45a11857b55138d25c8604d"
+checksum = "f6e1430c89633736996fd763822abd252e395dbccaaee33be601b4d59678a93e"
 dependencies = [
  "cfg-if",
  "linearize-derive",
@@ -228,9 +228,9 @@ dependencies = [
 
 [[package]]
 name = "linearize-derive"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d931b3daaf9c459c447e0da0fb49c93c241353f795757d5eafebd0af8c8b1255"
+checksum = "f657db73fbcad5341c5991ddee6c464d4bfd521575c0dc1a47913e0f434defeb"
 dependencies = [
  "proc-macro2",
  "quote",
